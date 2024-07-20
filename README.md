@@ -1,6 +1,6 @@
 # Introduce
 
-안녕하세요, 저희는 한국의 네트워크챌린지 줄여서 넷챌린지 캠프 시즌10 경진대회에 참가했던 숭실대학교 DCN 연구실의 FedMec팀입니다. \n
+안녕하세요, 저희는 한국의 네트워크챌린지 줄여서 넷챌린지 캠프 시즌10 경진대회에 참가했던 숭실대학교 DCN 연구실의 FedMec팀입니다.
 이 넷챌린지는 다양한 네트워크 및 AI 등 기술들을 가지고 참가자들이 자신들의 아이디어를 펼치고 선보이는 대회입니다. 
 저희팀은 "분산 엣지 컴퓨팅 환경에서의 연합학습 머신러닝 서비스의 오케스트레이션 기능 개발"이란 주제로 참여하게 되었으며
 6개월 간의 팀원과의 협업으로 대회에서 은상을 수상하는 영광을 갖게 되었습니다.
@@ -48,23 +48,26 @@ If you want to reduce the learning time of federated learning, you can set a lea
 
 ## Project Introduce(2)
 
+그래서 저희 FedMec팀은 연합학습 내부의 학습전략을 개선하기로 결정했습니다. ("AI 모델 연합학습 학습전략")
+1. 우선순위에 따른 엣지 선택 학습전략
+코어 클라우드에서 동작하고 해당 학습전략의 구성단계는 1라운드 학습과 n라운드 학습 별로 상이한 점이 있다. 우선 1라운드 학습 시 랜덤 엣지 선택, 초기 모델 배포 및 학습, 학습 파라미터 취합 및 모델 업데이트, 엣지 우선순위 설정, 업데이트 모델 재배포 단계로 나눌 수 있다. 1라운드 학습 단계별로 살펴보면 랜덤한 엣지 선택은 갓 연합학습을 시작한 시스템은 어떤 엣지들이 성능이 좋은지에 대한 정보가 없기에 랜덤으로 엣지들을 사전에 정해놓은 수만큼 선택하게 된다. 그리고 초기 모델 배포 및 학습 단계를 진행하여 랜덤으로 선택했던 엣지들에서 학습을 돌리게 된다. 정해진 시간 내에 학습을 마무리하여 파라미터들을 취합하여 모델을 업데이트하여 공용 스토리지에 저장하게 된다. 이때 학습 시간에 지연이 생겨 늦게 도착할 엣지의 파라미터는 우선 해당 단계에서 취합되지 않는다. 마지막으로 업데이트 모델 재배포 단계를 거쳐 새로운 라운드를 시작한다. 단, 새로운 라운드 시작 전에 도착한 파라미터를 토대로 엣지들의 우선순위를 결정하는 엣지 우선순위 결정 단계가 있다. 우선순위는 ‘참여 가능한 엣지(Participant)’와 ‘straggler’, 두 그룹으로 구성되며 학습시간과 엣지의 학습 상태가 우선순위 그룹의 기준이 될 것이며 이 중의 조건에 하나라도 미흡한 엣지가 있으면 우선순위는 ‘straggler’로 부여되면서 이후 일정 수의 라운드를 학습에 참여하지 못하는 패널티를 받게 한다. 하지만 우선순위를 낮게 결정된 엣지는 이후 계속 학습의 기회가 없게 되면 자원의 낭비가 우려되어 페널티(학습에 참여하지 못함)가 지나면 우선순위를 다시 올리게 된다. 이것이 1라운드 학습 시의 ‘우선순위에 따른 엣지 선택 학습전략’의 구성이다. n 라운드 학습 시의 ‘우선순위에 따른 엣지 선택 학습전략’은 2가지 특이점이 있으며 첫 번째는 학습 단계에 있어서 1라운드 학습과는 큰 차이점이 없지만 랜덤한 엣지 선택 단계만 우선순위에 따른 엣지 선택 단계로 변한다는 것이다.
+2. Semi-Synchronous 전략
+이전 라운드에서 취합되지 않았던 파라미터들이 해당 라운드에서는 취합된다.
 
+서비스의 제공을 위한 "AI 모델 서비스 추론 파이프라인" 추가로 구성:
+연합학습의 라운드마다 업데이트된 글로벌 모델을 엣지 클러스터로 배포하면 그 모델을 이용하여 추론을 진행하는 파이프라인이다. 그리고 해당 파이프라인은 엣지의 저장소에 웹사이트에서 업로드된 이미지가 저장되는 시점을 기준으로 트리거되도록 설정한다. 사용자의 로컬 환경에서 웹사이트를 접속하여 피부 사진을 업로드하게 되면 엣지로 이미지를 보내게 된다. 엣지 클러스터의 특정 폴더에 이미지가 저장되면 그 폴더에 변화가 생기므로 이벤트를 발생하게 되면서 이 이벤트를 감지해서 추론 코드를 실행하는 워크플로우가 트리거가 되면서 업로드한 이미지에 대한 추론이 진행되어 결과를 도출하게 된다. 해당 결과는 또한 다시 웹사이트로 전달이 되어 사용자에게 출력되어 보이게 된다. 흑색종 피부암 예측 진단 결과를 빠르게 받아볼 수 있다는 것이 사용자에게 있어 서비스 사용의 편의성이 증가하는 효과가 있다.
+
+위 파일들은 서비스를 제공하기 위한 2번쨰 "AI 모델 서비스 추론 파이프라인"에 관련된 웹페이지 서비스의 코드이다.
 
 ## Bugs and Issues
 
-Have a bug or an issue with this template? [Open a new issue](https://github.com/BlackrockDigital/startbootstrap-freelancer/issues) here on GitHub or leave a comment on the [template overview page at Start Bootstrap](http://startbootstrap.com/template-overviews/freelancer/).
-
-
+현재 프로젝트는 오케스트레이션 기능을 구현하기 전이며 경진대회에서 선보였던 것은 연합학습 내부적인 학습전략의 개선에 관한 것이기에
+추후에 기회되면 해당 개선된 학습전략의 연합학습을 클라우드 환경에 적용해보는 작업을 할 것이다.
 
 ## Creator
 
-Start Bootstrap was created by and is maintained by **[David Miller](http://davidmiller.io/)**, Owner of [Blackrock Digital](http://blackrockdigital.io/).
-
-* https://twitter.com/davidmillerskt
-* https://github.com/davidtmiller
-
-Start Bootstrap is based on the [Bootstrap](http://getbootstrap.com/) framework created by [Mark Otto](https://twitter.com/mdo) and [Jacob Thorton](https://twitter.com/fat).
+The project team "FedMec" of Soongsil Univ. DCN Lab
 
 ## Copyright and License
 
-Copyright 2013-2016 Blackrock Digital LLC. Code released under the [MIT](https://github.com/BlackrockDigital/startbootstrap-freelancer/blob/gh-pages/LICENSE) license.
+
